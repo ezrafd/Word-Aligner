@@ -6,7 +6,8 @@ public class WordAligner {
     protected HashMap<String, HashMap<String, Double>> pairCounts; // outer word is engWord and inner word is frWord
     protected HashMap<String, HashMap<String, Double>> probs; // outer word is engWord and inner word is frWord
 
-    public WordAligner(String english_sentences, String foreign_sentences, double iterations, double probability_threshold) throws IOException {
+
+    public WordAligner(String english_sentences, String foreign_sentences, int iterations, double probability_threshold) throws IOException {
 
         //make first iteration method
         //then make another method for another iteration which we can have in a for loop in the constructor
@@ -16,7 +17,10 @@ public class WordAligner {
         probs = new HashMap<>();
 
         firstIteration(english_sentences, foreign_sentences);
-        nextIteration(english_sentences, foreign_sentences);
+        for (int i = 0; i < iterations - 1; i++) {
+            nextIteration(english_sentences, foreign_sentences);
+        }
+
     }
 
     /**
@@ -73,9 +77,6 @@ public class WordAligner {
             frLine = frBr.readLine();
         }
 
-        System.out.println(pairCounts);
-        System.out.println(engCounts);
-
         // Compute the probability for each foreign word given each English word
         for (String engWord : pairCounts.keySet()) {
             probs.put(engWord, new HashMap<>());
@@ -95,7 +96,6 @@ public class WordAligner {
      * @throws IOException
      */
     public void nextIteration(String english_sentences, String foreign_sentences) throws IOException {
-        double prob;
 
         // Clear the counts for each (English, foreign) word pair and English word
         for (String engWord : pairCounts.keySet()) {
@@ -115,29 +115,35 @@ public class WordAligner {
         BufferedReader frBr = new BufferedReader(new FileReader(frFile));
         String frLine = frBr.readLine();
 
+        HashMap<String, HashMap<String, Double>> alignmentProbs; // outer word is frWord and inner word is engWord
+        double denominator;
+        double pairCount;
+        double engCount;
+
         // Loop through each pair of English and foreign sentences
         while (engLine != null && frLine != null) {
             // Split English and foreign sentences into words
             String[] engWords = engLine.split("\\s+");
             String[] frWords = frLine.split("\\s+");
 
-            HashMap<String, Double> total_s = new HashMap<>();
-            for (String engWord : engWords) {
-                total_s.put(engWord, 0.0);
-            }
+            alignmentProbs = new HashMap<>();
 
             for (String engWord : engWords) {
+                denominator = 0.0;
                 for (String frWord : frWords) {
-                    total_s.put(engWord, total_s.get(engWord) + probs.get(engWord).get(frWord));
-                }
-            }
+                    alignmentProbs.put(frWord, new HashMap<>());
 
-            for (String engWord : engWords) {
-                for (String frWord : frWords) {
-                    pairCounts.get(engWord).put(frWord, pairCounts.get(engWord).get(frWord)
-                            + (probs.get(engWord).get(frWord) / total_s.get(engWord)));
-                    engCounts.put(engWord, engCounts.get(engWord)
-                            + (probs.get(engWord).get(frWord) / total_s.get(engWord)));
+                    for (String eWord : engWords) {
+                        denominator += probs.get(eWord).get(frWord);
+                    }
+
+                    alignmentProbs.get(frWord).put(engWord, probs.get(engWord).get(frWord) / denominator);
+
+                    pairCount = pairCounts.get(engWord).get(frWord) + alignmentProbs.get(frWord).get(engWord);
+                    pairCounts.get(engWord).put(frWord, pairCount);
+
+                    engCount = engCounts.get(engWord) + alignmentProbs.get(frWord).get(engWord);
+                    engCounts.put(engWord, engCount);
                 }
             }
 
@@ -146,12 +152,10 @@ public class WordAligner {
             frLine = frBr.readLine();
         }
 
-        System.out.println(pairCounts);
-        System.out.println(engCounts);
+        double prob;
 
         // Compute the probability for each foreign word given each English word
         for (String engWord : pairCounts.keySet()) {
-            probs.put(engWord, new HashMap<>());
             for (String frWord : pairCounts.get(engWord).keySet()) {
                 prob = pairCounts.get(engWord).get(frWord) / engCounts.get(engWord);
                 probs.get(engWord).put(frWord, prob);
@@ -165,7 +169,7 @@ public class WordAligner {
     public static void main(String[] args) throws IOException {
         String enSentences = "/Users/ezraford/Desktop/School/CS 159/Word-Aligner/data/test.en";
         String frSentences = "/Users/ezraford/Desktop/School/CS 159/Word-Aligner/data/test.fr";
-        WordAligner test = new WordAligner(enSentences, frSentences, 1, 0.0);
+        WordAligner test = new WordAligner(enSentences, frSentences, 3, 0.0);
     }
 
 
