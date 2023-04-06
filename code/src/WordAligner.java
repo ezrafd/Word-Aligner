@@ -4,7 +4,7 @@ import java.util.HashMap;
 public class WordAligner {
     protected HashMap<String, Double> engCounts; // counts for english words
     protected HashMap<String, HashMap<String, Double>> pairCounts; // outer word is engWord and inner word is frWord
-    protected HashMap<String, HashMap<String, Double>> probs;
+    protected HashMap<String, HashMap<String, Double>> probs; // outer word is engWord and inner word is frWord
 
     public WordAligner(String english_sentences, String foreign_sentences, double iterations, double probability_threshold) throws IOException {
 
@@ -16,6 +16,7 @@ public class WordAligner {
         probs = new HashMap<>();
 
         firstIteration(english_sentences, foreign_sentences);
+        nextIteration(english_sentences, foreign_sentences);
     }
 
     /**
@@ -87,10 +88,13 @@ public class WordAligner {
         System.out.println(probs);
     }
 
+
     /**
-     * Processes the second iteration of the EM algorithm.
+     * @param english_sentences
+     * @param foreign_sentences
+     * @throws IOException
      */
-    public void secondIteration() {
+    public void nextIteration(String english_sentences, String foreign_sentences) throws IOException {
         double prob;
 
         // Clear the counts for each (English, foreign) word pair and English word
@@ -101,32 +105,60 @@ public class WordAligner {
             engCounts.put(engWord, 0.0);
         }
 
+        // Read English sentences from file
+        File engFile = new File(english_sentences);
+        BufferedReader engBr = new BufferedReader(new FileReader(engFile));
+        String engLine = engBr.readLine();
+
+        // Read foreign sentences from file
+        File frFile = new File(foreign_sentences);
+        BufferedReader frBr = new BufferedReader(new FileReader(frFile));
+        String frLine = frBr.readLine();
+
         // Loop through each pair of English and foreign sentences
-        // and update the counts for each (English, foreign) word pair and English word
-        for (int i = 0; i < englishSentences.size(); i++) {
-            String[] engWords = englishSentences.get(i).split("\\s+");
-            String[] frWords = foreignSentences.get(i).split("\\s+");
+        while (engLine != null && frLine != null) {
+            // Split English and foreign sentences into words
+            String[] engWords = engLine.split("\\s+");
+            String[] frWords = frLine.split("\\s+");
+
+            HashMap<String, Double> total_s = new HashMap<>();
+            for (String engWord : engWords) {
+                total_s.put(engWord, 0.0);
+            }
 
             for (String engWord : engWords) {
-                double engWordCount = 0.0;
                 for (String frWord : frWords) {
-                    engWordCount += probs.get(engWord).get(frWord);
-                }
-                for (String frWord : frWords) {
-                    double pairCount = probs.get(engWord).get(frWord) / engWordCount;
-                    pairCounts.get(engWord).put(frWord, pairCounts.get(engWord).get(frWord) + pairCount);
-                    engCounts.put(engWord, engCounts.get(engWord) + pairCount);
+                    total_s.put(engWord, total_s.get(engWord) + probs.get(engWord).get(frWord));
                 }
             }
+
+            for (String engWord : engWords) {
+                for (String frWord : frWords) {
+                    pairCounts.get(engWord).put(frWord, pairCounts.get(engWord).get(frWord)
+                            + (probs.get(engWord).get(frWord) / total_s.get(engWord)));
+                    engCounts.put(engWord, engCounts.get(engWord)
+                            + (probs.get(engWord).get(frWord) / total_s.get(engWord)));
+                }
+            }
+
+            // Read the next pair of English and foreign sentences
+            engLine = engBr.readLine();
+            frLine = frBr.readLine();
         }
 
-        // Re-estimate the probabilities for each foreign word given each English word
+        System.out.println(pairCounts);
+        System.out.println(engCounts);
+
+        // Compute the probability for each foreign word given each English word
         for (String engWord : pairCounts.keySet()) {
+            probs.put(engWord, new HashMap<>());
             for (String frWord : pairCounts.get(engWord).keySet()) {
                 prob = pairCounts.get(engWord).get(frWord) / engCounts.get(engWord);
                 probs.get(engWord).put(frWord, prob);
             }
         }
+
+        System.out.println(probs);
     }
 
 
