@@ -1,5 +1,5 @@
 import java.io.*;
-import java.util.HashMap;
+import java.util.*;
 
 public class WordAligner {
     protected HashMap<String, Double> engCounts; // counts for english words
@@ -20,6 +20,8 @@ public class WordAligner {
         for (int i = 0; i < iterations - 1; i++) {
             nextIteration(english_sentences, foreign_sentences);
         }
+
+        printProbs(probability_threshold);
 
     }
 
@@ -45,6 +47,8 @@ public class WordAligner {
 
         // Loop through each pair of English and foreign sentences
         while (engLine != null && frLine != null) {
+            engLine = "yasharmut " + engLine;
+
             // Split English and foreign sentences into words
             String[] engWords = engLine.split("\\s+");
             String[] frWords = frLine.split("\\s+");
@@ -86,7 +90,7 @@ public class WordAligner {
             }
         }
 
-        System.out.println(probs);
+        //System.out.println(probs);
     }
 
 
@@ -110,6 +114,7 @@ public class WordAligner {
         BufferedReader engBr = new BufferedReader(new FileReader(engFile));
         String engLine = engBr.readLine();
 
+
         // Read foreign sentences from file
         File frFile = new File(foreign_sentences);
         BufferedReader frBr = new BufferedReader(new FileReader(frFile));
@@ -122,6 +127,8 @@ public class WordAligner {
 
         // Loop through each pair of English and foreign sentences
         while (engLine != null && frLine != null) {
+            engLine = "yasharmut " + engLine;
+
             // Split English and foreign sentences into words
             String[] engWords = engLine.split("\\s+");
             String[] frWords = frLine.split("\\s+");
@@ -129,8 +136,9 @@ public class WordAligner {
             alignmentProbs = new HashMap<>();
 
             for (String engWord : engWords) {
-                denominator = 0.0;
                 for (String frWord : frWords) {
+                    denominator = 0.0;
+
                     alignmentProbs.put(frWord, new HashMap<>());
 
                     for (String eWord : engWords) {
@@ -162,14 +170,39 @@ public class WordAligner {
             }
         }
 
-        System.out.println(probs);
+        //System.out.println(probs);
+    }
+
+
+    public void printProbs(double probability_threshold) {
+        Set<String> engWords = engCounts.keySet();
+        List<String> sortedEngWords = new ArrayList<>(engWords);
+        Collections.sort(sortedEngWords);
+
+        for (String engWord : sortedEngWords) {
+            Set<String> frWords = probs.get(engWord).keySet();
+            List<String> sortedFrWords = new ArrayList<>(frWords);
+            Collections.sort(sortedFrWords);
+
+
+
+            for (String frWord : frWords) {
+                if (probs.get(engWord).get(frWord) >= probability_threshold) {
+                    if (engWord.equals("yasharmut")) {
+                        System.out.println("NULL\t" + frWord + "\t" + probs.get(engWord).get(frWord));
+                    } else {
+                        System.out.println(engWord + "\t" + frWord + "\t" + probs.get(engWord).get(frWord));
+                    }
+                }
+            }
+        }
     }
 
 
     public static void main(String[] args) throws IOException {
-        String enSentences = "/Users/ezraford/Desktop/School/CS 159/Word-Aligner/data/test.en";
-        String frSentences = "/Users/ezraford/Desktop/School/CS 159/Word-Aligner/data/test.fr";
-        WordAligner test = new WordAligner(enSentences, frSentences, 3, 0.0);
+        String enSentences = "/Users/talmordoch/Library/Mobile Documents/com~apple~CloudDocs/Word-Aligner/data/es-en.100k.en";
+        String frSentences = "/Users/talmordoch/Library/Mobile Documents/com~apple~CloudDocs/Word-Aligner/data/es-en.100k.es";
+        WordAligner test = new WordAligner(enSentences, frSentences, 10, 0.0);
     }
 
 
