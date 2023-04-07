@@ -200,9 +200,11 @@ public class WordAligner {
 
 
     public static void main(String[] args) throws IOException {
-        String enSentences = "/Users/talmordoch/Library/Mobile Documents/com~apple~CloudDocs/Word-Aligner/data/es-en.100k.en";
-        String frSentences = "/Users/talmordoch/Library/Mobile Documents/com~apple~CloudDocs/Word-Aligner/data/es-en.100k.es";
-        WordAligner test = new WordAligner(enSentences, frSentences, 10, 0.0);
+//        String enSentences = "/Users/ezraford/Desktop/School/CS 159/Word-Aligner/data/test.en";
+//        String frSentences = "/Users/ezraford/Desktop/School/CS 159/Word-Aligner/data/test.fr";
+        String enSentences = "/Users/talmordoch/Library/Mobile Documents/com~apple~CloudDocs/Word-Aligner/data/es-en.10k.en";
+        String frSentences = "/Users/talmordoch/Library/Mobile Documents/com~apple~CloudDocs/Word-Aligner/data/es-en.10k.es";
+        WordAligner test = new WordAligner(enSentences, frSentences, 10, 0.3);
     }
 
 
